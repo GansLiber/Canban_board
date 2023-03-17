@@ -15,7 +15,7 @@ Vue.component('columns', {
         <div class="glob-list">
             <column class="column" :colIndex="colIndex1" :name="name" :col="columns[0]" @changeTask="changeTask" @toNextTask="toNextTask" @delTask="delTask" :class="{block1col: block1col}" :block1col="block1col"></column>
             <column class="column" :colIndex="colIndex2" :name="name2" :col="columns[1]" @changeTask="changeTask" @toNextTask="toNextTask"></column>
-            <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @changeTask="changeTask" @toNextTask="toNextTask" @backTask="backTask" @insertReason="insertReason"></column>
+            <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @changeTask="changeTask" @toNextTask="toNextTask" @backTask="backTask" @wantBackTask="wantBackTask" @insertReason="insertReason"></column>
             <column class="column" :colIndex="colIndex4" :name="name4" :col="columns[3]" @changeTask="changeTask"></column>
         </div>
     `,
@@ -76,15 +76,21 @@ Vue.component('columns', {
             this.columns[task.colIndex + 1].push(...move)
         },
         backTask(task) {
-            console.log('gg')
             let move = this.columns[task.colIndex].splice(task.index, 1)
+            move[0].wantBack = false;
+            console.log(move)
             this.columns[task.colIndex - 1].push(...move)
         },
 
         insertReason(task){
-            console.log(task.reason)
+            console.log('resons task', task)
             let reasonTask = this.columns[task.colIndex][task.index]
             reasonTask.reasonsBack.push(task.reason)
+        },
+        wantBackTask(task){
+            let backTask = this.columns[task.colIndex][task.index]
+            backTask.wantBack = true;
+            console.log(this.wantBack)
         },
 
         moveTask(movingTask, task){
@@ -133,14 +139,21 @@ Vue.component('column', {
 
                         <input v-show="colIndex===0"  type="button" @click="delTask(index, colIndex)" value="Удалить">
                         <input v-show="colIndex!==3"  type="button" @click="toNextTask(index, colIndex)" value="Далее">
-                        <input v-show="colIndex===2"  type="button" @click="backTask(index, colIndex)" value="Вернуть"><br>
+                        <input v-show="colIndex===2 && !pun.wantBack"  type="button" @click="wantBackTask(index, colIndex)" value="Вернуть"><br>
                         <input v-show="colIndex!==3"  type="button" @click="changeTask(index, colIndex)" value="Редактировать">
                         
-                        <div v-if="colIndex===2">
-                            <form action="">
+                        <ul v-if="pun.reasonsBack!==[]">
+                            <p>Причины возврата</p>
+                            <li v-for="el of pun.reasonsBack">
+                                {{el}}
+                            </li>
+                        </ul>
+                        
+                        <div v-if="colIndex===2 && pun.wantBack">
+                            <form>
                                 <label for="reason">Причина возврата:</label>
-                                <input id="reason" type="text" v-model="reason" >
-                                <input type="submit" name="reason" id="reason" @click="insertReason(index, colIndex, reason)">
+                                <input id="reason" type="text" v-model="reason" placeholder="причина">
+                                <input type="submit" value="Вернуть" name="reason" id="reason" @click="insertReason(index, colIndex, reason), backTask(index, colIndex)">
                             </form>
                         </div>
                     </li>
@@ -153,7 +166,7 @@ Vue.component('column', {
         return {
             count: null,
             strDate: null,
-            reason: null
+            reason: null,
         }
     },
     methods: {
@@ -165,10 +178,14 @@ Vue.component('column', {
             this.$emit('delTask', {index, colIndex})
         },
         toNextTask(index, colIndex){
+
             this.$emit('toNextTask', {index, colIndex})
         },
         backTask(index, colIndex){
             this.$emit('backTask', {index, colIndex})
+        },
+        wantBackTask(index, colIndex){
+            this.$emit('wantBackTask', {index, colIndex})
         },
 
         insertReason(index, colIndex, reason){
@@ -219,6 +236,7 @@ Vue.component('create-task', {
                 deadline: this.deadline,
                 dateStart: this.dateStart,
                 reasonsBack:[],
+                wantBack: false,
                 id: this.id,
             }
             // taskReview.puncts = this.removeEmptyValues(taskReview.puncts)
