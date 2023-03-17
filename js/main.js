@@ -13,9 +13,9 @@ Vue.component('columns', {
 
     template: `
         <div class="glob-list">
-            <column class="column" :colIndex="colIndex1" :name="name" :col="columns[0]" @changeTask="changeTask" :class="{block1col: block1col}" :block1col="block1col"></column>
-            <column class="column" :colIndex="colIndex2" :name="name2" :col="columns[1]" @changeTask="changeTask"></column>
-            <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @changeTask="changeTask"></column>
+            <column class="column" :colIndex="colIndex1" :name="name" :col="columns[0]" @changeTask="changeTask" @toNextTask="toNextTask" @delTask="delTask" :class="{block1col: block1col}" :block1col="block1col"></column>
+            <column class="column" :colIndex="colIndex2" :name="name2" :col="columns[1]" @changeTask="changeTask" @toNextTask="toNextTask"></column>
+            <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @changeTask="changeTask" @toNextTask="toNextTask" @backTask="backTask" @insertReason="insertReason"></column>
             <column class="column" :colIndex="colIndex4" :name="name4" :col="columns[3]" @changeTask="changeTask"></column>
         </div>
     `,
@@ -49,14 +49,9 @@ Vue.component('columns', {
         // }
 
         eventBus.$on('review-submitted', taskReview => {
-            console.log(this.columns[0].length);
-            if (!this.block1col){
-                if (this.columns[0].length<3){
-                    console.log('puncts', taskReview.puncts)
-                    this.columns[0].push(taskReview)
-                    this.saveCols()
-                }
-            }
+            console.log('puncts', taskReview)
+            this.columns[0].push(taskReview)
+            // this.saveCols()
         })
     },
     // watch:{
@@ -70,35 +65,33 @@ Vue.component('columns', {
             localStorage.setItem('columns', JSON.stringify(this.columns))
         },
         changeTask(task) {
-            (!this.columns[task.colIndex][task.index].puncts[task.indexPuncts].done) ? this.columns[task.colIndex][task.index].puncts[task.indexPuncts].done = true : this.columns[task.colIndex][task.index].puncts[task.indexPuncts].done = false
             let movingTask = this.columns[task.colIndex][task.index]
             this.moveTask(movingTask, task)
         },
-        moveTask(movingTask, task) {
-            let allLength = movingTask.puncts.length
-            let doneLength = 0
-            for (let i of movingTask.puncts) {
-                if (i.done === true) {
-                    doneLength++
-                }
-            }
+        delTask(task) {
+            this.columns[task.colIndex].splice(task.index, 1)
+        },
+        toNextTask(task) {
+            let move = this.columns[task.colIndex].splice(task.index, 1)
+            this.columns[task.colIndex + 1].push(...move)
+        },
+        backTask(task) {
+            console.log('gg')
+            let move = this.columns[task.colIndex].splice(task.index, 1)
+            this.columns[task.colIndex - 1].push(...move)
+        },
 
-            if (doneLength > allLength / 2 && doneLength !== allLength && this.columns[task.colIndex] === this.columns[0]) {
-                if (this.columns[1].length<5){
-                    let move = this.columns[task.colIndex].splice(task.index, 1)
-                    this.columns[task.colIndex + 1].push(...move)
-                } else {
-                    this.block1col = true
-                }
-            }
+        insertReason(task){
+            console.log(task.reason)
+            let reasonTask = this.columns[task.colIndex][task.index]
+            reasonTask.reasonsBack.push(task.reason)
+        },
 
-            if (doneLength === allLength) {
-                let move = this.columns[task.colIndex].splice(task.index, 1)
-                this.columns[2].push(...move)
-                this.block1col = false
-            }
+        moveTask(movingTask, task){
+            let move = this.columns[task.colIndex].splice(task.index, 1)
+            this.columns[task.colIndex + 1].push(...move)
         }
-    },
+    }
 })
 
 Vue.component('column', {
@@ -138,9 +131,18 @@ Vue.component('column', {
                         <p>Дедлайн:</p><p>{{pun.deadline}}</p>
                         <p>Дата создания:</p><p>{{pun.dateStart}}</p>
 
-                        <input v-show="colIndex===0"  type="button" @click="changeTask(index, indexPuncts, colIndex)" value="Удалить">
-                        <input v-show="colIndex!==3"  type="button" @click="moveTask(index, indexPuncts, colIndex)" value="Далее">
-                        <input v-show="colIndex!==3"  type="button" @click="changeTask(index, indexPuncts, colIndex)" value="Редактировать">
+                        <input v-show="colIndex===0"  type="button" @click="delTask(index, colIndex)" value="Удалить">
+                        <input v-show="colIndex!==3"  type="button" @click="toNextTask(index, colIndex)" value="Далее">
+                        <input v-show="colIndex===2"  type="button" @click="backTask(index, colIndex)" value="Вернуть"><br>
+                        <input v-show="colIndex!==3"  type="button" @click="changeTask(index, colIndex)" value="Редактировать">
+                        
+                        <div v-if="colIndex===2">
+                            <form action="">
+                                <label for="reason">Причина возврата:</label>
+                                <input id="reason" type="text" v-model="reason" >
+                                <input type="submit" name="reason" id="reason" @click="insertReason(index, colIndex, reason)">
+                            </form>
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -150,14 +152,28 @@ Vue.component('column', {
     data() {
         return {
             count: null,
-            strDate: null
+            strDate: null,
+            reason: null
         }
     },
     methods: {
-        changeTask(index, indexPuncts, colIndex) {
+        changeTask(index, colIndex) {
             console.log(this.strDate)
-            this.$emit('changeTask', {index, indexPuncts, colIndex})
+            this.$emit('changeTask', {index, colIndex})
         },
+        delTask(index, colIndex){
+            this.$emit('delTask', {index, colIndex})
+        },
+        toNextTask(index, colIndex){
+            this.$emit('toNextTask', {index, colIndex})
+        },
+        backTask(index, colIndex){
+            this.$emit('backTask', {index, colIndex})
+        },
+
+        insertReason(index, colIndex, reason){
+            this.$emit('insertReason', {index, colIndex, reason})
+        }
     }
 })
 
@@ -202,6 +218,7 @@ Vue.component('create-task', {
                 description: this.description,
                 deadline: this.deadline,
                 dateStart: this.dateStart,
+                reasonsBack:[],
                 id: this.id,
             }
             // taskReview.puncts = this.removeEmptyValues(taskReview.puncts)
