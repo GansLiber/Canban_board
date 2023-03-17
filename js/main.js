@@ -13,7 +13,7 @@ Vue.component('columns', {
 
     template: `
         <div class="glob-list">
-            <column class="column" :colIndex="colIndex1" :name="name" :col="columns[0]" @changeTask="changeTask" @toNextTask="toNextTask" @delTask="delTask" :class="{block1col: block1col}" :block1col="block1col"></column>
+            <column class="column" :colIndex="colIndex1" :name="name" :col="columns[0]" @changeTask="changeTask" @toNextTask="toNextTask" @delTask="delTask"></column>
             <column class="column" :colIndex="colIndex2" :name="name2" :col="columns[1]" @changeTask="changeTask" @toNextTask="toNextTask"></column>
             <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @changeTask="changeTask" @toNextTask="toNextTask" @backTask="backTask" @wantBackTask="wantBackTask" @insertReason="insertReason"></column>
             <column class="column" :colIndex="colIndex4" :name="name4" :col="columns[3]" @changeTask="changeTask"></column>
@@ -38,8 +38,6 @@ Vue.component('columns', {
             colIndex2: 1,
             colIndex3: 2,
             colIndex4: 3,
-
-            block1col: false,
         }
     },
     mounted() {
@@ -114,10 +112,6 @@ Vue.component('column', {
             type: Number,
             required: true
         },
-        block1col: {
-            type: Boolean,
-            required: false
-        }
     },
     template: `
         <div>
@@ -150,7 +144,7 @@ Vue.component('column', {
                         </ul>
                         
                         <div v-if="colIndex===2 && pun.wantBack">
-                            <form>
+                            <form @submit.prevent="onSubmit">
                                 <label for="reason">Причина возврата:</label>
                                 <input id="reason" type="text" v-model="reason" placeholder="причина">
                                 <input type="submit" value="Вернуть" name="reason" id="reason" @click="insertReason(index, colIndex, reason), backTask(index, colIndex)">
@@ -170,6 +164,7 @@ Vue.component('column', {
         }
     },
     methods: {
+
         changeTask(index, colIndex) {
             console.log(this.strDate)
             this.$emit('changeTask', {index, colIndex})
@@ -178,7 +173,6 @@ Vue.component('column', {
             this.$emit('delTask', {index, colIndex})
         },
         toNextTask(index, colIndex){
-
             this.$emit('toNextTask', {index, colIndex})
         },
         backTask(index, colIndex){
@@ -190,6 +184,7 @@ Vue.component('column', {
 
         insertReason(index, colIndex, reason){
             this.$emit('insertReason', {index, colIndex, reason})
+            this.reason=null
         }
     }
 })
