@@ -138,17 +138,9 @@ Vue.component('column', {
                         <p>Дедлайн:</p><p>{{pun.deadline}}</p>
                         <p>Дата создания:</p><p>{{pun.dateStart}}</p>
 
-                        <label :for="pun.id">
-                        <input
-                            type="checkbox"
-                            :disabled="prop.done || block1col"
-                            :checked="prop.done"
-                            id="pun.id" 
-                            value="1"
-                            @change="changeTask(index, indexPuncts, colIndex)"
-                            >{{prop.punct}}<p>{{prop.done}}</p></label><br>
-
-                        <p>{{pun.dateEnd}}</p>
+                        <input v-show="colIndex===0"  type="button" @click="changeTask(index, indexPuncts, colIndex)" value="Удалить">
+                        <input v-show="colIndex!==3"  type="button" @click="moveTask(index, indexPuncts, colIndex)" value="Далее">
+                        <input v-show="colIndex!==3"  type="button" @click="changeTask(index, indexPuncts, colIndex)" value="Редактировать">
                     </li>
                 </ul>
             </div>
@@ -157,7 +149,6 @@ Vue.component('column', {
     `,
     data() {
         return {
-            checkdTask: [],
             count: null,
             strDate: null
         }
