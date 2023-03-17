@@ -1,0 +1,45 @@
+body{
+    padding: 40px;
+}
+.glob-list{
+    display: flex;
+    justify-content: space-between;
+}
+.column{
+    display: flex;
+    flex-flow: column wrap;
+}
+.block1col{
+    background-color: #a93838;
+}
+.btn{
+    background-color: #5dcb5d;
+}
+.btn:hover{
+    background-color: #59b759;
+}
+.punct{
+    padding: 7px;
+    display: flex;
+}
+p{
+    margin-bottom: 0;
+}
+.taskBorder{
+    display: inline-block;
+    border: solid;
+    padding: 4px;
+    margin: 7px;
+}
+.inUl{
+    padding: 0;
+}
+.inUl>li{
+    list-style-type: none;
+}
+.form-p{
+    margin-right: 5px;;
+}
+.punct>input{
+    height: 30px;
+}
