@@ -15,8 +15,8 @@ Vue.component('columns', {
         <div class="glob-list">
             <column class="column" :colIndex="colIndex1" :name="name" :col="columns[0]" @redactTask="redactTask" @toNextTask="toNextTask" @redSub="redSub" @delTask="delTask"></column>
             <column class="column" :colIndex="colIndex2" :name="name2" :col="columns[1]" @redactTask="redactTask" @toNextTask="toNextTask" @redSub="redSub"></column>
-            <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @redactTask="redactTask" @toNextTask="toNextTask" @redSub="redSub" @backTask="backTask" @wantBackTask="wantBackTask" @insertReason="insertReason"></column>
-            <column class="column" :colIndex="colIndex4" :name="name4" :col="columns[3]"></column>
+            <column class="column" :colIndex="colIndex3" :name="name3" :col="columns[2]" @redactTask="redactTask" @toNextTask="toNextTask" @redSub="redSub" @backTask="backTask" @wantBackTask="wantBackTask" @insertReason="insertReason" @endTime="endTime"></column>
+            <column class="column" :colIndex="colIndex4" :name="name4" :col="columns[3]" @endTime="endTime"></column>
         </div>
     `,
     data() {
@@ -90,6 +90,15 @@ Vue.component('columns', {
             console.log(move)
             this.columns[task.colIndex - 1].push(...move)
         },
+        endTime(task){
+            this.dateTaskEnd(task)
+            let deadline = new Date(this.columns[task.colIndex+1][task.index].deadline)
+            let timeEnd = new Date(this.columns[task.colIndex+1][task.index].timeOfEnd)
+
+            deadline<=timeEnd ? this.columns[task.colIndex+1][task.index].moreOrLess=true : this.columns[task.colIndex+1][task.index].moreOrLess=false
+
+            // console.log(deadline, timeEnd)
+        },
 
         insertReason(task){
             console.log('resons task', task)
@@ -100,6 +109,14 @@ Vue.component('columns', {
             let backTask = this.columns[task.colIndex][task.index]
             backTask.wantBack = true;
             console.log(this.wantBack)
+        },
+        dateTaskEnd(task){
+            let date = new Date()
+            let year = date.getFullYear()
+            let month = date.getMonth()+1
+            let day = date.getDate()
+            let strDate = year+'-'+month+'-'+day
+            this.columns[task.colIndex+1][task.index].timeOfEnd = strDate
         },
 
         moveTask(movingTask, task){
@@ -157,7 +174,7 @@ Vue.component('column', {
                         <p>Дата создания: {{pun.dateStart}}</p>
 
                         <input v-show="colIndex===0"  type="button" @click="delTask(index, colIndex)" value="Удалить">
-                        <input v-show="colIndex!==3"  type="button" @click="toNextTask(index, colIndex)" value="Далее">
+                        <input v-show="colIndex!==3"  type="button" @click="toNextTask(index, colIndex), endTime(index, colIndex)" value="Далее">
                         <input v-show="colIndex===2 && !pun.wantBack"  type="button" @click="wantBackTask(index, colIndex)" value="Вернуть"><br>
                         <input v-show="colIndex!==3"  type="button" @click="redactTask(index, colIndex)" value="Редактировать">
                         
@@ -174,6 +191,10 @@ Vue.component('column', {
                                 <input id="reason" type="text" v-model="reason" placeholder="причина">
                                 <input type="submit" value="Вернуть" name="reason" id="reason" @click="insertReason(index, colIndex, reason), backTask(index, colIndex)">
                             </form>
+                        </div>
+                        <div v-if="colIndex===3">
+                            <h3 v-if="!pun.moreOrLess">Во время</h3>
+                            <h3 v-if="pun.moreOrLess">Просрочено</h3>
                         </div>
                     </li>
                 </ul>
@@ -234,6 +255,10 @@ Vue.component('column', {
         wantBackTask(index, colIndex){
             this.$emit('wantBackTask', {index, colIndex})
         },
+        endTime(index, colIndex){
+            this.$emit('endTime', {index, colIndex})
+        },
+
 
         insertReason(index, colIndex, reason){
             this.$emit('insertReason', {index, colIndex, reason})
@@ -287,6 +312,9 @@ Vue.component('create-task', {
                 wantBack: false,
                 timeForRedact: false,
                 lastRedactTime: null,
+                timeOfEnd: null,
+                flagEnd: false,
+                moreOrLess: false,
                 id: this.id,
             }
             // taskReview.puncts = this.removeEmptyValues(taskReview.puncts)
@@ -319,7 +347,7 @@ Vue.component('create-task', {
             let time = date.toLocaleTimeString()
             let strDate = year+'-'+month+'-'+day+' , '+time
             this.dateStart = strDate
-        }
+        },
     }
 })
 
